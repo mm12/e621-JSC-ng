@@ -136,7 +136,7 @@ export async function getReplacementUrl(id, sourceData, source, reason) {
     }
   }
 
-  return `https://e621.net/post_replacements/new?post_id=${id}&url=${encodeURIComponent(sourceData.originalUrl ? sourceData.originalUrl : sourceData.url)}&reason=${encodeURIComponent(reason)}&source=${encodeURIComponent(source)}`;
+  return `https://e621.net/post_replacements/new?post_id=${id}&url=${encodeURIComponent(sourceData.originalUrl ? sourceData.originalUrl : sourceData.url)}&reason=${encodeURIComponent('[JSV] ' + reason)}&source=${encodeURIComponent(source)}`;
 }
 
 export async function processData(data: ServerResponse, refreshable = true, containerSelector = '.source-links') {
