@@ -27,9 +27,11 @@ export function getData(id: number, force = false, updatePost = false): Promise<
 
 export function getDataBulk(ids: number[] | string[]): Promise<ServerResponse[]> {
   return new Promise((resolve, reject) => {
+    if (ids.length == 0) return resolve([]);
+
     GM.xmlHttpRequest({
       method: 'GET',
-      url: `${BACKEND_URL_BASE}/checksources/bulk?ids=${ids.join(',')}`,
+      url: `${BACKEND_URL_BASE}/checksources/bulk?ids=${Array.from(new Set<number | string>(ids)).join(',')}`,
       onload: function (response) {
         try {
           const data = JSON.parse(response.responseText);

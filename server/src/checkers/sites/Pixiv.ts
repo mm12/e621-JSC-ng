@@ -45,6 +45,7 @@ export default class PixivSourceChecker extends SourceChecker {
 
   async _internalProcessPost(post: SourceCheckQueueItem, source: string, retried: boolean = false): Promise<SourceData> {
     if (this.disabled) {
+      console.log('[PixivSourceChecker] Attempted to check pixiv post, but pixiv is disabled.');
       return {
         unknown: true,
         error: true
@@ -66,7 +67,13 @@ export default class PixivSourceChecker extends SourceChecker {
       const res = await this.pixiv.illustDetail(id);
 
       if (!res.illust) {
-        console.error('[PixivSourceChecker] res.illust is undefined:');
+        if (!retried) {
+          console.error('[PixivSourceChecker] Refreshing tokens and trying again');
+          await this.setup();
+          return await this._internalProcessPost(post, source, true);
+        }
+
+        console.error(`[PixivSourceChecker] res.illust is undefined (${post._id}):`);
         console.error(res);
         return {
           unknown: true,

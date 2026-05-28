@@ -91,7 +91,7 @@ export class SourceChecker {
       }
 
       const phash = await this.calculatePhash(arrayBuffer);
-      const phashDistance = calcPhashDistance(phash, post.phash!);
+      const phashDistance = phash.startsWith('9') || post.phash?.startsWith('9') ? -1 : calcPhashDistance(phash, post.phash!);
 
       return {
         md5Match: md5 == post.md5,

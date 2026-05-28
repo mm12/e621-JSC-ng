@@ -1,6 +1,6 @@
 import { getData, getDataBulk } from './Backend';
 import { checkFluffle, hasCachedFluffleData } from './Fluffle';
-import { addKemonoData, processData, processDataOnPostView, waitForSelector } from './Utilities';
+import { addKemonoData, processData, processDataOnPostView, wait, waitForSelector } from './Utilities';
 
 function addCSS() {
   document.head.append(Object.assign(document.createElement('style'), {
@@ -8,6 +8,10 @@ function addCSS() {
     textContent: `
 .jsv-icon {
   width: 1.25em;
+}
+
+.jsv-replacement-anchor {
+  display: inline-flex;
 }
 
 .loading:after {
@@ -78,7 +82,7 @@ function checkForNewPosts(mutationList: MutationRecord[], observer: MutationObse
     if (mutation.type === 'childList') {
       for (const addedNode of mutation.addedNodes) {
         const addedElement = addedNode as HTMLElement;
-        if (addedElement.tagName == 'IMG-RIBBONS') {
+        if (addedElement.tagName == 'POST-INFO' || addedElement.classList?.contains('thm-desc')) {
           timeOfMostRecentAddition = Date.now();
           additions.push(mutation.target as HTMLElement);
           if (!interval && additions.length > 0) {
@@ -87,11 +91,14 @@ function checkForNewPosts(mutationList: MutationRecord[], observer: MutationObse
                 clearInterval(interval);
                 interval = null;
 
-                const ids = additions.map(p => p.id.slice(6));
+                const ids = additions.map((p) => {
+                  if (p.tagName == 'POST') return p.id.slice(6);
+                  else return p.getAttribute('data-id') ?? '-1';
+                });
 
                 additions = [];
 
-                const datas = await getDataBulk(ids);
+                const datas = await getDataBulk(ids.filter(id => id != '-1'));
 
                 for (const data of datas) {
                   processDataOnPostView(data);
@@ -144,11 +151,26 @@ async function main() {
   }
 
   if (window.location.pathname == '/posts') {
+    // await wait(100);
     const observer = new MutationObserver(checkForNewPosts);
-    const target = await waitForSelector('search-content');
+    const targets = await Promise.all([waitForSelector('search-content', 3000), waitForSelector('.posts-container', 1500)]);
+
+    const target = targets[0] ?? targets[1];
+
     if (!target) return;
 
     observer.observe(target, { attributes: true, childList: true, subtree: true });
+
+    const vanillaIds = Array.from(document.querySelectorAll('.posts-container > article.thumbnail')).map(p => p.getAttribute('data-id') ?? '-1');
+    const re6Ids = Array.from(document.querySelectorAll('post')).map(p => p.id.slice(6));
+
+    console.log(vanillaIds, re6Ids);
+
+    const datas = await getDataBulk(vanillaIds.concat(re6Ids).filter(id => id != '-1'));
+
+    for (const data of datas) {
+      processDataOnPostView(data);
+    }
     return;
   }
 

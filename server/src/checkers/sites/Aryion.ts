@@ -26,7 +26,7 @@ export default class AryionSourceChecker extends SourceChecker {
       const dom = getDOM(html);
       const document = dom.window.document;
 
-      const url = document.getElementById('item-itself')?.getAttribute('data-full-src');
+      const url = document.getElementById('item-itself')?.getAttribute('data-full-src') ?? document.getElementById('item-itself')?.querySelector('video > source')?.getAttribute('src');
 
       if (!url) {
         console.error(`Error with (no url): ${source} (${post._id})`);

@@ -285,7 +285,7 @@ export async function processData(data: ServerResponse, refreshable = true, cont
         }
 
 
-        if (!sourceData.md5Match && sourceData.phashDistance !== undefined) {
+        if (!sourceData.md5Match && sourceData.phashDistance !== undefined && sourceData.phashDistance != -1) {
           const phashClone = phashMatch.cloneNode(true) as HTMLElement;
 
           if (sourceData.phashDistance == 0) {
@@ -468,14 +468,20 @@ export async function processData(data: ServerResponse, refreshable = true, cont
 export function processDataOnPostView(data: ServerResponse) {
   const _isCompleteResponse = isCompleteResponse(data);
 
-  const post = document.getElementById(`entry_${data.id}`);
+  let post = document.getElementById(`entry_${data.id}`);
+  const isRe6 = !!post;
+
+  if (!isRe6) post = document.querySelector(`article[data-id='${data.id}']`);
 
   if (!post) return;
 
-  const postInfo = post.querySelector('post-info');
+  const postInfo = isRe6 ? post.querySelector('post-info') : post.querySelector('.thm-desc-a');
 
   if (!postInfo) return;
 
+  for (const element of postInfo.querySelectorAll<HTMLElement>('.jsv-icon')) {
+    element.remove();
+  }
 
   if (!_isCompleteResponse && data.queued) {
     postInfo.appendChild(spinner.cloneNode(true));
@@ -513,7 +519,7 @@ export function processDataOnPostView(data: ServerResponse) {
       previewMatched = true;
     }
 
-    if (closestPerceptually == null || sourceData.phashDistance! < closestPerceptually.phashDistance!) {
+    if (closestPerceptually == null || (sourceData.phashDistance! >= 0 && sourceData.phashDistance! < closestPerceptually.phashDistance!)) {
       closestPerceptually = sourceData;
     }
   }
@@ -532,7 +538,7 @@ export function processDataOnPostView(data: ServerResponse) {
     postInfo.appendChild(noMatches.cloneNode(true));
   }
 
-  if (!closestPerceptually!.md5Match && closestPerceptually!.phashDistance !== undefined) {
+  if (!closestPerceptually!.md5Match && closestPerceptually!.phashDistance !== undefined && closestPerceptually!.phashDistance != -1) {
     const phashClone = phashMatch.cloneNode(true) as HTMLElement;
 
     if (closestPerceptually!.phashDistance == 0) {

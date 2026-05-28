@@ -28,6 +28,13 @@ export default class Rule34XXXSourceChecker extends SourceChecker {
 
       const url = document.querySelector('#image')?.getAttribute('src');
 
+      if (!url) {
+        return {
+          unknown: true,
+          error: true
+        };
+      }
+
       if (url.includes('samples')) {
         const originalUrl = document.querySelector('.link-list a[href*=images]')?.getAttribute('href');
 

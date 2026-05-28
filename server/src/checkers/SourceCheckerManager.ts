@@ -190,6 +190,10 @@ export default class SourceCheckerManager {
       // console.log(`[SourceCheckerManager] Processing post ${queueItem._id} with ${sourceChecker.name}`);
       const data = await sourceChecker.processPost(queueItem, current);
       for (const [key, value] of Object.entries(data)) {
+        if (value.error) {
+          console.error(`[SourceCheckerManager] Error while processing post ${queueItem._id} with ${sourceChecker.name} on source: ${key}`);
+        }
+
         combinedData[key] = value;
       }
     }

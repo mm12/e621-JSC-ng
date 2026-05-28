@@ -23,15 +23,18 @@ export default class MastodonSourceChecker extends SourceChecker {
       page = await SourceChecker.browser!.newPage();
       await page.goto(source);
 
+      const contentWarning = await SourceChecker.waitForSelectorOrNull(page, '.content-warning > button', 1000);
+
+      if (contentWarning) {
+        await contentWarning.evaluate(b => b.click());
+      }
+
       const main = await SourceChecker.waitForSelectorOrNull(page, '.media-gallery', 5000);
 
       if (!main) {
         return {
           unknown: true,
-          error: true,
-          md5Match: false,
-          dimensionMatch: false,
-          fileTypeMatch: false
+          error: true
         };
       }
 
@@ -43,6 +46,8 @@ export default class MastodonSourceChecker extends SourceChecker {
       let allImages = (await main.$$('.media-gallery__item-thumbnail > img'));
 
       for (let i = 0; i < allImages.length; i++) {
+        const parentAnchorHref = await allImages[i].evaluate(e => e.parentElement.href);
+
         const srcset = await allImages[i].evaluate(e => e.getAttribute('srcset'));
         if (!srcset) {
           allImages[i] = [await allImages[i].evaluate(e => e.getAttribute('src'))];
@@ -50,6 +55,8 @@ export default class MastodonSourceChecker extends SourceChecker {
         }
         const parsed = parseSrcset(srcset);
         allImages[i] = parsed.map(p => p.url);
+
+        if (parentAnchorHref) allImages[i].push(parentAnchorHref);
       }
 
       allImages = allImages.flat();
