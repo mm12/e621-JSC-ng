@@ -1,4 +1,5 @@
 import { getData, getDataBulk } from './Backend';
+import { Version } from './Constants';
 import { checkFluffle, hasCachedFluffleData } from './Fluffle';
 import { addKemonoData, processData, processDataOnPostView, wait, waitForSelector } from './Utilities';
 
@@ -114,6 +115,8 @@ function checkForNewPosts(mutationList: MutationRecord[], observer: MutationObse
 
 async function main() {
   addCSS();
+
+  console.log(`[Janitor Source Verifier] Running with version ${Version}`);
 
   if (window.location.href.startsWith('https://e621.net/post_replacements/')) {
     const params = new URLSearchParams(window.location.search);

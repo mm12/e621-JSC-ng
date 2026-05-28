@@ -1,4 +1,4 @@
-import { anyLinksSupported, checkFluffleLinks } from './Backend';
+import { anyLinksSupported, checkFluffleLinks, sendSources } from './Backend';
 import { FluffleFaces, FluffleMessages, UserAgent } from './Constants';
 import { addSourceSign, spinner } from './icons';
 import { getImageBlob, processData } from './Utilities';
@@ -129,13 +129,42 @@ async function setFluffleCache(id: number, data: FluffleResult[]) {
   await GM.setValue('fluffleCache', JSON.stringify(fluffleCache));
 }
 
+let sourcesToAdd: string[] = [];
+let timeout;
+
+async function sendSourcesToVerifier() {
+  timeout = null;
+  await sendSources(sourcesToAdd);
+  sourcesToAdd = [];
+}
+
+function addSource(result: FluffleResult, immediate: boolean, event: PointerEvent) {
+  event.stopImmediatePropagation();
+  event.preventDefault();
+
+  if (sourcesToAdd.includes(result.url)) return;
+
+  sourcesToAdd.push(result.url);
+  if (immediate) {
+    sendSourcesToVerifier();
+    return;
+  }
+
+  if (!timeout) {
+    timeout = setTimeout(sendSources, 500);
+  } else {
+    clearTimeout(timeout);
+    timeout = setTimeout(sendSources, 500);
+  }
+}
+
 export function createFluffleSource(result: FluffleResult, immediate: boolean = false) {
   const div = document.createElement('div');
   div.classList.add('source-link', 'fluffle621-source-link');
 
   const wrappedAnchor = document.createElement('a');
 
-  // wrappedAnchor.onclick = addSource.bind(null, result, immediate);
+  wrappedAnchor.onclick = addSource.bind(null, result, immediate);
 
   wrappedAnchor.title = 'Add source';
   wrappedAnchor.appendChild(addSourceSign.cloneNode(true));

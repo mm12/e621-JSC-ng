@@ -1,7 +1,8 @@
 import type { ServerResponse } from '../../shared';
 import { BACKEND_URL_BASE } from './Constants';
+import { getCSRFToken, wait } from './Utilities';
 
-export function getData(id: number, force = false, updatePost = false): Promise<ServerResponse> {
+export function getData(id: number | string, force = false, updatePost = false): Promise<ServerResponse> {
   return new Promise((resolve, reject) => {
     const path = force || updatePost ? `checksources/update/${id}?forcepostupdate=${updatePost}&waitfordata=true` : `checksources/${id}`;
 
@@ -75,7 +76,7 @@ export function anyLinksSupported(links: string[]): Promise<boolean> {
   });
 }
 
-export function checkFluffleLinks(id: number, links: string[]): Promise<ServerResponse> {
+export function checkFluffleLinks(id: number | string, links: string[]): Promise<ServerResponse> {
   return new Promise((resolve, reject) => {
     GM.xmlHttpRequest({
       method: 'POST',
@@ -97,4 +98,44 @@ export function checkFluffleLinks(id: number, links: string[]): Promise<ServerRe
       }
     });
   });
+}
+
+export async function sendSources(sourcesToAdd: string[]) {
+  try {
+    const container = document.getElementById('image-container');
+    if (!container) return;
+
+    const id = container.getAttribute('data-id');
+
+    if (!id) return;
+
+    const res = await fetch(`https://e621.net/posts/${id}.json`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': getCSRFToken()
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        post: {
+          source_diff: sourcesToAdd.join('\n'),
+          edit_reason: 'FluffleSource'
+        }
+      })
+    });
+
+    if (res.ok) {
+      Danbooru.notice('Successfully added sources.');
+
+      await getData(id, true, true);
+      await wait(50);
+      window.location.reload();
+    } else {
+      console.error(await res.text());
+      Danbooru.error('Error setting source. Check console.');
+    }
+  } catch (e) {
+    console.error(e);
+    Danbooru.error('Error setting source. Check console.');
+  }
 }
